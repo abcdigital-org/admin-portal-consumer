@@ -47,12 +47,28 @@ jobs:
     #     run: |
     #       git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
     #       mkdir -p contracts/pacts/catalog-service
+      - name: Ensure CONTRACT_PAT is available
+        run: |
+            if [ -z "${{ secrets.CONTRACT_PAT }}" ]; then
+              echo "ERROR: CONTRACT_PAT secret is not available in this run. Ensure the secret is configured for this repository and branch." >&2
+              exit 1
+            fi
+      - name: Validate CONTRACT_PAT can access contracts repo
+        run: |
+           status=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.CONTRACT_PAT }}" https://api.github.com/repos/${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }})
+           echo "GitHub API response status: $status"
+           if [ "$status" -ne 200 ]; then
+             echo "ERROR: CONTRACT_PAT cannot access repository '${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }}' (HTTP $status). Ensure the PAT has appropriate scopes and repository access." >&2
+             exit 1
+           fi
+
       - name: Checkout contracts repo
         uses: actions/checkout@v4 
         with: 
             repository: ${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }} 
             token: ${{ secrets.CONTRACT_PAT }} 
             path: contracts
+            ref: main
 
       - name: Copy generated pact files into contracts repo
         run: |
