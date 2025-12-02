@@ -12,7 +12,7 @@ permissions:
 env:
   NODE_VERSION: '22'
   ORG_NAME: abcdigital-org
-  CONTRACTS_REPO: contracts-repo
+  CONTRACTS_REPO: contract-repo
   PROVIDER_REPO: catalog-provider
 
 jobs:
