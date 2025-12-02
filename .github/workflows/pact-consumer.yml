@@ -43,10 +43,16 @@ jobs:
       - name: Run pact consumer tests
         run: npm run test:consumer
 
-      - name: Clone contracts repository
-        run: |
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
-          mkdir -p contracts/pacts/catalog-service
+    #   - name: Clone contracts repository
+    #     run: |
+    #       git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
+    #       mkdir -p contracts/pacts/catalog-service
+      - name: Checkout contracts repo
+        uses: actions/checkout@v4 
+        with: 
+            repository: ${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }} 
+            token: ${{ secrets.CONTRACT_PAT }} 
+            path: contracts
 
       - name: Copy generated pact files into contracts repo
         run: |
