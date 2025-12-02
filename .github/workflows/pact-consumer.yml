@@ -45,7 +45,7 @@ jobs:
 
       - name: Clone contracts repository
         run: |
-          git clone https://github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
           mkdir -p contracts/pacts/catalog-service
 
       - name: Copy generated pact files into contracts repo
