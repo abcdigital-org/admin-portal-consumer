@@ -12,7 +12,7 @@ permissions:
 env:
   NODE_VERSION: '22'
   ORG_NAME: abcdigital-org
-  CONTRACTS_REPO: contracts-repo
+  CONTRACTS_REPO: contract-repo
   PROVIDER_REPO: catalog-provider
 
 jobs:
@@ -43,10 +43,32 @@ jobs:
       - name: Run pact consumer tests
         run: npm run test:consumer
 
-      - name: Clone contracts repository
+    #   - name: Clone contracts repository
+    #     run: |
+    #       git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
+    #       mkdir -p contracts/pacts/catalog-service
+      - name: Ensure CONTRACT_PAT is available
         run: |
-          git clone https://github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
-          mkdir -p contracts/pacts/catalog-service
+            if [ -z "${{ secrets.CONTRACT_PAT }}" ]; then
+              echo "ERROR: CONTRACT_PAT secret is not available in this run. Ensure the secret is configured for this repository and branch." >&2
+              exit 1
+            fi
+      - name: Validate CONTRACT_PAT can access contracts repo
+        run: |
+           status=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.CONTRACT_PAT }}" https://api.github.com/repos/${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }})
+           echo "GitHub API response status: $status"
+           if [ "$status" -ne 200 ]; then
+             echo "ERROR: CONTRACT_PAT cannot access repository '${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }}' (HTTP $status). Ensure the PAT has appropriate scopes and repository access." >&2
+             exit 1
+           fi
+
+      - name: Checkout contract-repo repository
+        uses: actions/checkout@v4 
+        with: 
+            repository: ${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }} 
+            token: ${{ secrets.CONTRACT_PAT }} 
+            path: contracts
+            ref: main
 
       - name: Copy generated pact files into contracts repo
         run: |
@@ -87,9 +109,18 @@ jobs:
           CONSUMER_SHA: ${{ github.event.pull_request.head.sha }}
           CONSUMER_REPO: ${{ github.repository }}
         run: |
-          gh api repos/${ORG_NAME}/${PROVIDER_REPO}/dispatches \
-            -f event_type=verify-pact \
-            -f client_payload="{\"pact_branch\":\"${PACT_BRANCH}\",\"consumer_repo\":\"${CONSUMER_REPO}\",\"consumer_sha\":\"${CONSUMER_SHA}\"}"
+          cat > payload.json <<EOF
+          {
+            "event_type": "verify-pact",
+            "client_payload": {
+              "pact_branch": "${PACT_BRANCH}",
+              "consumer_repo": "${CONSUMER_REPO}",
+              "consumer_sha": "${CONSUMER_SHA}"
+            }
+          }
+          EOF
+          gh api repos/${ORG_NAME}/${PROVIDER_REPO}/dispatches --input payload.json
+          rm -f payload.json
 
       - name: Fail if contracts changed but PR not created
         if: steps.detect_changes.outputs.changed == 'true' && steps.create_pr.outputs.pull-request-number == ''

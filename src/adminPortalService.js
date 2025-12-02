@@ -3,10 +3,10 @@
 class AdminPortalService {
   constructor({ catalogClient, catalogBaseUrl }) {
     if (!catalogClient) {
-      throw new Error('AdminPortalService requires a catalogClient');
+      throw new Error('AdminPortalService requires a catalogClient !');
     }
     if (!catalogBaseUrl) {
-      throw new Error('AdminPortalService requires a catalogBaseUrl');
+      throw new Error('AdminPortalService requires a catalogBaseUrl !');
     }
     this.catalogClient = catalogClient;
     this.catalogBaseUrl = catalogBaseUrl;
