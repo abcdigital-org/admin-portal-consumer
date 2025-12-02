@@ -111,7 +111,7 @@ jobs:
         run: |
           gh api repos/${ORG_NAME}/${PROVIDER_REPO}/dispatches \
             --raw-field event_type=verify-pact \
-            --raw-field client_payload="{\"pact_branch\":\"${PACT_BRANCH}\",\"consumer_repo\":\"${CONSUMER_REPO}\",\"consumer_sha\":\"${CONSUMER_SHA}\"}"
+            --raw-field client_payload='{"pact_branch":"'"${PACT_BRANCH}"'","consumer_repo":"'"${CONSUMER_REPO}"'","consumer_sha":"'"${CONSUMER_SHA}"'"}'
 
       - name: Fail if contracts changed but PR not created
         if: steps.detect_changes.outputs.changed == 'true' && steps.create_pr.outputs.pull-request-number == ''
