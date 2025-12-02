@@ -109,14 +109,18 @@ jobs:
           CONSUMER_SHA: ${{ github.event.pull_request.head.sha }}
           CONSUMER_REPO: ${{ github.repository }}
         run: |
-          payload=$(jq -n \
-            --arg pact_branch "${PACT_BRANCH}" \
-            --arg consumer_repo "${CONSUMER_REPO}" \
-            --arg consumer_sha "${CONSUMER_SHA}" \
-            '{pact_branch: $pact_branch, consumer_repo: $consumer_repo, consumer_sha: $consumer_sha}')
-          gh api repos/${ORG_NAME}/${PROVIDER_REPO}/dispatches \
-            --raw-field event_type=verify-pact \
-            --raw-field client_payload="${payload}"
+          cat > payload.json <<EOF
+          {
+            "event_type": "verify-pact",
+            "client_payload": {
+              "pact_branch": "${PACT_BRANCH}",
+              "consumer_repo": "${CONSUMER_REPO}",
+              "consumer_sha": "${CONSUMER_SHA}"
+            }
+          }
+          EOF
+          gh api repos/${ORG_NAME}/${PROVIDER_REPO}/dispatches --input payload.json
+          rm -f payload.json
 
       - name: Fail if contracts changed but PR not created
         if: steps.detect_changes.outputs.changed == 'true' && steps.create_pr.outputs.pull-request-number == ''
