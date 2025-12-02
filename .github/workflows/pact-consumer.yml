@@ -62,7 +62,7 @@ jobs:
              exit 1
            fi
 
-      - name: Checkout contracts repo
+      - name: Checkout contract-repo repository
         uses: actions/checkout@v4 
         with: 
             repository: ${{ env.ORG_NAME }}/${{ env.CONTRACTS_REPO }} 
