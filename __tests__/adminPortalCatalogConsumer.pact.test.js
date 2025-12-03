@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path');
-const { PactV3, MatchersV3 } = require('@pact-foundation/pact');
+const { PactV4, MatchersV3 } = require('@pact-foundation/pact');
 const AdminPortalService = require('../src/adminPortalService');
 const catalogAdminClient = require('../src/catalogAdminClient');
 
@@ -19,28 +19,25 @@ const productMatcher = {
   description: MatchersV3.like('Freshly brewed coffee every morning'),
   price: MatchersV3.decimal(199.99),
   inStock: MatchersV3.boolean(true),
+  slug: MatchersV3.like('coffee_machine_110'),
+  color: MatchersV3.integer(4)
 };
 
-describe('Admin Portal -> Catalog pact', () => {
-  const provider = new PactV3(pactConfig);
+describe('Admin Portal -> Catalog Service pact', () => {
+  const pact = new PactV4(pactConfig);
 
   it('lists products with status metadata for administrators', async () => {
-    await provider
+    await pact
+      .addInteraction()
       .given('products exist')
       .uponReceiving('a request for the administrative product listing')
-      .withRequest({
-        method: 'GET',
-        path: '/products',
-        headers: {
-          Accept: 'application/json',
-        },
+      .withRequest('GET', '/products', (builder) => {
+        builder.headers({ 'Accept': 'application/json' });
       })
-      .willRespondWith({
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-        },
-        body: MatchersV3.eachLike(productMatcher, 2),
+      .willRespondWith(200, (builder) => {
+        builder
+          .headers({ 'Content-Type': 'application/json; charset=utf-8' })
+          .jsonBody(MatchersV3.eachLike(productMatcher, 2));
       })
       .executeTest(async (mockServer) => {
         const service = new AdminPortalService({
@@ -61,28 +58,23 @@ describe('Admin Portal -> Catalog pact', () => {
   });
 
   it('retrieves a product for editing with derived status', async () => {
-    await provider
+    await pact
+      .addInteraction()
       .given('product with ID 2 exists')
       .uponReceiving('an administrative request to edit a product')
-      .withRequest({
-        method: 'GET',
-        path: '/products/2',
-        headers: {
-          Accept: 'application/json',
-        },
+      .withRequest('GET', '/products/2', (builder) => {
+        builder.headers({ 'Accept': 'application/json' });
       })
-      .willRespondWith({
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-        },
-        body: {
-          id: MatchersV3.integer(2),
-          name: MatchersV3.like('Wireless Headphones'),
-          description: MatchersV3.like('Noise cancelling over-ear headphones'),
-          price: MatchersV3.decimal(3249.5),
-          inStock: MatchersV3.boolean(true),
-        },
+      .willRespondWith(200, (builder) => {
+        builder
+          .headers({ 'Content-Type': 'application/json; charset=utf-8' })
+          .jsonBody({
+            id: MatchersV3.integer(2),
+            name: MatchersV3.like('Wireless Headphones'),
+            description: MatchersV3.like('Noise cancelling over-ear headphones'),
+            price: MatchersV3.decimal(3249.5),
+            inStock: MatchersV3.boolean(true),
+          });
       })
       .executeTest(async (mockServer) => {
         const service = new AdminPortalService({
@@ -102,22 +94,17 @@ describe('Admin Portal -> Catalog pact', () => {
   });
 
   it('returns null when an administrator opens a missing product', async () => {
-    await provider
+    await pact
+      .addInteraction()
       .given('product with ID 999 does not exist')
       .uponReceiving('an administrative request to edit a missing product')
-      .withRequest({
-        method: 'GET',
-        path: '/products/999',
-        headers: {
-          Accept: 'application/json',
-        },
+      .withRequest('GET', '/products/999', (builder) => {
+        builder.headers({ 'Accept': 'application/json' });
       })
-      .willRespondWith({
-        status: 404,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-        },
-        body: MatchersV3.like({ message: 'Product not found' }),
+      .willRespondWith(404, (builder) => {
+        builder
+          .headers({ 'Content-Type': 'application/json; charset=utf-8' })
+          .jsonBody(MatchersV3.like({ message: 'Product not found' }));
       })
       .executeTest(async (mockServer) => {
         const service = new AdminPortalService({
