@@ -43,10 +43,6 @@ jobs:
       - name: Run pact consumer tests
         run: npm run test:consumer
 
-    #   - name: Clone contracts repository
-    #     run: |
-    #       git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${ORG_NAME}/${CONTRACTS_REPO}.git contracts
-    #       mkdir -p contracts/pacts/catalog-service
       - name: Ensure CONTRACT_PAT is available
         run: |
             if [ -z "${{ secrets.CONTRACT_PAT }}" ]; then
