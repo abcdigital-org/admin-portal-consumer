@@ -19,9 +19,10 @@ const productMatcher = {
   description: MatchersV3.like('Freshly brewed coffee every morning'),
   price: MatchersV3.decimal(199.99),
   inStock: MatchersV3.boolean(true),
+  slug: MatchersV3.like('coffee_machine_110')
 };
 
-describe('Admin Portal -> Catalog pact', () => {
+describe('Admin Portal -> Catalog Service pact', () => {
   const pact = new PactV4(pactConfig);
 
   it('lists products with status metadata for administrators', async () => {
